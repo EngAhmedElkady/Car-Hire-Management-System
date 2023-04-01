@@ -1,8 +1,10 @@
 from cgitb import reset
 from operator import le
+from tracemalloc import start
 from unittest import result
 from flask import Flask, request, jsonify
 import mysql.connector
+from datetime import datetime
 
 app = Flask(__name__)
 db = mysql.connector.connect(
@@ -101,7 +103,6 @@ def delete_customer(customer_id):
 
 @app.route('/customer/<customer_id>', methods=['GET'])
 def get_customer(customer_id):
-    customer_id = int(customer_id)
     try:
         cursor = db.cursor()
         query = "SELECT * FROM customers WHERE customer_id=%s"
@@ -121,6 +122,62 @@ def get_customer(customer_id):
             return jsonify({'message': 'Customer_id not found'})
     except Exception as e:
         return jsonify({"message": "Customer_id not found"})
+
+
+
+
+# Make a booking and create an invoice
+@app.route('/make_booking', methods=['POST'])
+def make_booking():
+    data = request.json
+    if 'car_type' not in data or 'customer_email' not in data or 'date_hire' not in data or 'date_return' not in data:
+        return jsonify({'message': 'Missing data'}), 400
+    
+    date_hire = data['date_hire']
+    date_return = data['date_return']
+
+    booking_date_start = datetime.strptime(date_hire, '%Y-%m-%d').date()
+    booking_date_end = datetime.strptime(date_return, '%Y-%m-%d').date()
+
+    # calculate the difference between booking date and current date
+    date_diff = (booking_date_end - booking_date_start).days
+    if date_diff < 0:
+        return jsonify({'message': 'Invalid date'}), 400
+    
+
+    cursor = db.cursor()
+
+    # find the type of car
+    cursor.execute("SELECT * FROM vehicle_types WHERE type_name=%s", (data['car_type'],))
+    type_results = cursor.fetchall()
+    if len(type_results) == 0:
+        return jsonify({"message": "Invalid car type"}), 400
+    
+    # find the customer
+    cursor.execute("SELECT * FROM customers WHERE email=%s", (data['customer_email'],))
+    customer_results = cursor.fetchall()
+    if len(customer_results) == 0:
+        return jsonify({"message": "Invalid customer email"}), 400
+    
+    # Check if vehicle is available
+    cursor.execute("SELECT vehicle_id FROM vehicles WHERE type_id=%s and available=%s", (type_results[0][0],1),)
+    cars_result= cursor.fetchall()
+    if len(cars_result) == 0:
+        return jsonify({"message": "No vehicle available"}), 400
+    
+
+    # Vehicle available, create new booking
+    cursor.execute("INSERT INTO bookings (customer_id, vehicle_id, hire_date, return_date , cost) VALUES (%s, %s, %s, %s,%s)", (customer_results[0][0], cars_result[0][0], data['date_hire'], data['date_return'],date_diff*250))
+    
+    # update the vehicle to unavailable
+    cursor.execute("UPDATE vehicles SET available=%s WHERE vehicle_id=%s", (0,cars_result[0][0]))
+    db.commit()
+    cursor.close()
+
+    return jsonify({'message': 'Booking successful'}), 200
+    
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
