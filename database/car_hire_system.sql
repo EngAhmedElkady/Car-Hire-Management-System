@@ -6,7 +6,7 @@ CREATE TABLE customers (
   customer_id INT PRIMARY KEY auto_increment,
   first_name VARCHAR(50) NOT NULL ,
   last_name VARCHAR(50) NOT NULL,
-  email VARCHAR(100) NOT NULL,
+  email VARCHAR(100) NOT NULL unique,
   phone_number VARCHAR(20) NOT NULL
 );
 
