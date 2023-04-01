@@ -20,7 +20,7 @@ CREATE TABLE vehicle_types (
 CREATE TABLE vehicles (
   vehicle_id INT PRIMARY KEY auto_increment,
   type_id INT NOT NULL,
-  available BOOLEAN,
+  available BOOLEAN ,
   FOREIGN KEY (type_id) REFERENCES vehicle_types(type_id)
 );
 
@@ -31,6 +31,7 @@ CREATE TABLE bookings (
   vehicle_id INT,
   hire_date DATE,
   return_date DATE,
+  cost FLOAT NOT NULL,
   FOREIGN KEY (customer_id) REFERENCES customers(customer_id),
   FOREIGN KEY (vehicle_id) REFERENCES vehicles(vehicle_id)
 );
