@@ -123,6 +123,23 @@ def get_customer(customer_id):
     except Exception as e:
         return jsonify({"message": "Customer_id not found"})
 
+def update_booking_status():
+    cursor = db.cursor()
+    current_day = datetime.now().date()
+    query = "SELECT * FROM bookings WHERE hire_date > %s"
+    values = (current_day,)
+    cursor.execute(query, values)
+    result = cursor.fetchall()
+    if len(result) > 0:
+        print(result)
+        for row in result:
+            booking_id = row[0]
+            query= "delete from bookings where booking_id=%s"
+            values = (booking_id,)
+            cursor.execute(query, values)
+
+    db.commit()
+    cursor.close()
 
 
 
@@ -133,6 +150,7 @@ def make_booking():
     if 'car_type' not in data or 'customer_email' not in data or 'date_hire' not in data or 'date_return' not in data:
         return jsonify({'message': 'Missing data'}), 400
     
+    update_booking_status()
     date_hire = data['date_hire']
     date_return = data['date_return']
 
