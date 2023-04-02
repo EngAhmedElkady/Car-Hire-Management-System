@@ -181,7 +181,7 @@ def make_booking():
 @app.route('/report', methods=['GET'])
 def print_daily_report():
     cursor = db.cursor()
-    current_date = "2023-04-05"
+    current_date = datetime.now().date()
     cursor = db.cursor()
     query = "SELECT * FROM bookings WHERE hire_date<=%s and return_date>=%s"
     values = (current_date,current_date)
