@@ -177,7 +177,35 @@ def make_booking():
     return jsonify({'message': 'Booking successful'}), 200
     
 
-
+# Define a function to print a daily report of bookings
+@app.route('/report', methods=['GET'])
+def print_daily_report():
+    cursor = db.cursor()
+    current_date = "2023-04-05"
+    cursor = db.cursor()
+    query = "SELECT * FROM bookings WHERE hire_date<=%s and return_date>=%s"
+    values = (current_date,current_date)
+    cursor.execute(query, values)
+    bookings = cursor.fetchall()
+    if len(bookings) == 0:
+        return jsonify({"message": "No bookings found"})
+    else:
+        dct={}
+        for booking in bookings:
+            cursor.execute("SELECT * FROM customers WHERE customer_id=%s", (booking[1],))
+            customer = cursor.fetchone()
+            cursor.execute("SELECT * FROM vehicles WHERE vehicle_id=%s", (booking[2],))
+            vehicle = cursor.fetchone()
+            cursor.execute("SELECT * FROM vehicle_types WHERE type_id=%s", (vehicle[1],))
+            vehicle_type = cursor.fetchone()
+            dct[booking[0]] = {
+                'customer': customer[1] + " " + customer[2],
+                'vehicle': vehicle_type[1],
+                'hire_date': booking[3],
+                'return_date': booking[4],
+                'cost': booking[5]
+            }
+        return jsonify(dct)
 
 if __name__ == '__main__':
     app.run(debug=True)
